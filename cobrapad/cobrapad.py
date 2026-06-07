@@ -5,14 +5,27 @@ import sys
 
 
 
+
+
 screenX = 0
 screenY = 0
 
 pencere = None
-arka_plan_rengi = (30, 30, 30) 
+arka_plan_rengi = (0,0,0) 
 saat = None  
 cizim_listesi = [] 
 kutular = []
+kutu_hazirmi2 = False 
+resim_kutusu = []
+resim_kutusu2 = []
+resim_kutusu3 = []
+kutularin_listesi = []
+button_kutusu = []
+animasyon_kutusu = []
+
+
+
+
 
 
 renkler = {
@@ -24,8 +37,16 @@ renkler = {
     "pink": (255, 192, 203), "dark_pink": (231, 84, 128), "hot_pink": (255, 105, 180), "purple": (128, 0, 128), "magenta": (255, 0, 255), "violet": (238, 130, 238),
     "orange": (255, 165, 0), "gold": (255, 215, 0), "yellow_green": (154, 205, 50),
     "brown": (165, 42, 42), "gray": (128, 128, 128), "dark_gray": (169, 169, 169), "light_gray": (211, 211, 211), "silver": (192, 192, 192),
-    "turquoise": (64, 224, 208), "coral": (255, 127, 80), "salmon": (250, 128, 114)
+    "turquoise": (64, 224, 208), "coral": (255, 127, 80), "salmon": (250, 128, 114),
+    
+    
+    "teal": (0, 128, 128), "indigo": (75, 0, 130), "khaki": (240, 230, 140),
+    "lavender": (230, 230, 250), "maroon": (128, 0, 0), "peach": (255, 218, 185),
+    "mint": (189, 252, 201), "azure": (240, 255, 255), "chocolate": (210, 105, 30),
+    "ivory": (255, 255, 240), "wheat": (245, 222, 179), "plum": (221, 160, 221),
+    "charcoal": (54, 54, 54), "beige": (245, 245, 220), "tan": (210, 180, 140)
 }
+
 
 def open_screen():
     global pencere, saat, screenX, screenY
@@ -56,18 +77,12 @@ def open_screen():
    
 
 class Bridge:
-    def __init__(self):        
-        self.kutu_hazirmi = False 
-        
-    def create_the_box(self):  
-        if self.kutu_hazirmi:
-            raise RuntimeError("Cobrapad Error: The box is already initialized! You cannot initialize it more than once.")
-        else:
-            self.kutu_hazirmi = True 
-            print("Cobrapad: Box initialized successfully.")
+    def setup(self):
+        global kutu_hazirmi2 
+        kutu_hazirmi2 = True 
 
 
-calisma = None
+
 def study(isim="calisma"):
     yeni_kopru = Bridge()
     ana_modul = sys.modules['__main__']  
@@ -78,6 +93,10 @@ class ScreenManager:
     def paint(self, renk_adi):
         global arka_plan_rengi, renkler
         temiz_renk = renk_adi.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using screen.paint()!")
+        else:
+        	pass 
         if temiz_renk not in renkler:
              raise ValueError(f"Cobrapad Error: The color '{renk_adi}' is not defined in the color list!")
         arka_plan_rengi = renkler.get(temiz_renk, (255, 255, 255))
@@ -86,14 +105,52 @@ class KareNesnesi:
     def __init__(self, x, y, w, h, renk):
         self.tip = "kare"
         self.x, self.y, self.w, self.h, self.renk = x, y, w, h, renk
-        self.visible = True 
-        
+        self.visible = True
+        self._moves_y = 0
+        self._moves_x = 0
+        self._moves_speed = 0
+        self._moves_aktif = False
+
+    def moves(self, y=0, x=0, speed=1):
+        self._moves_y = y
+        self._moves_x = x
+        self._moves_speed = speed
+        self._moves_aktif = True
+
+    def movesTo(self, y=0, x=0, speed=1):
+        self._movesto_y = y
+        self._movesto_x = x
+        self._movesto_speed = speed
+        self._movesto_hedef_x = self.x + x
+        self._movesto_hedef_y = self.y + y
+        self._movesto_aktif = True
+
 
 class DaireNesnesi:
     def __init__(self, x, y, yaricap, renk):
         self.tip = "daire"
         self.x, self.y, self.yaricap, self.renk = x, y, yaricap, renk
-        self.visible = True 
+        self.visible = True
+        self._moves_y = 0
+        self._moves_x = 0
+        self._moves_speed = 0
+        self._moves_aktif = False
+
+    def moves(self, y=0, x=0, speed=1):
+        self._moves_y = y
+        self._moves_x = x
+        self._moves_speed = speed
+        self._moves_aktif = True
+
+    def movesTo(self, y=0, x=0, speed=1):
+        self._movesto_y = y
+        self._movesto_x = x
+        self._movesto_speed = speed
+        self._movesto_hedef_x = self.x + x
+        self._movesto_hedef_y = self.y + y
+        self._movesto_aktif = True
+      
+        
         
 class YaziNesnesi:
     def __init__(self, yazi, x, y, w, renk, tip):
@@ -104,33 +161,156 @@ class YaziNesnesi:
         self.renk = renk 
         self.tip = tip 
         self.visible = True 
+
         
         try:
             self.font_objesi = pygame.font.SysFont(tip, w)
         except Exception:
             self.font_objesi = pygame.font.Font(None, w)
+        
+class OvalNesnesi:
+    def __init__(self, x, y, w, h, renk):
+        self.tip = "oval"
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.renk = renk
+        self.visible = True
+        self._moves_y = 0
+        self._moves_x = 0
+        self._moves_speed = 0
+        self._moves_aktif = False
+
+    def moves(self, y=0, x=0, speed=1):
+        self._moves_y = y
+        self._moves_x = x
+        self._moves_speed = speed
+        self._moves_aktif = True
+
+    def movesTo(self, y=0, x=0, speed=1):
+        self._movesto_y = y
+        self._movesto_x = x
+        self._movesto_speed = speed
+        self._movesto_hedef_x = self.x + x
+        self._movesto_hedef_y = self.y + y
+        self._movesto_aktif = True
+
+class PolygonNesnesi:
+    def __init__(self, noktalar, kalinrik, renk):
+        self.tip = "polygon"
+        self.noktalar = noktalar
+        self.renk = renk
+        self.kalinrik = kalinrik
+        self.visible = True
+        
+        
+class ResimNesnesi:
+    def __init__(self, ekran_resim):
+        self.ekran_resim = ekran_resim
+        self.surface = pygame.image.load(ekran_resim).convert()
+        self.visible = True
+       
+        
+
+class Resim2Nesnesi:
+    def __init__(self, resim):
+        self.surface = pygame.image.load(resim).convert_alpha()
+        self.x = 0
+        self.y = 0
+        self.visible = True
+        self._moves_y = 0
+        self._moves_x = 0
+        self._moves_speed = 0
+        self._moves_aktif = False
+
+    def moves(self, y=0, x=0, speed=1):
+        self._moves_y = y
+        self._moves_x = x
+        self._moves_speed = speed
+        self._moves_aktif = True
+
+    def movesTo(self, y=0, x=0, speed=1):
+        self._movesto_y = y
+        self._movesto_x = x
+        self._movesto_speed = speed
+        self._movesto_hedef_x = self.x + x
+        self._movesto_hedef_y = self.y + y
+        self._movesto_aktif = True
+    
+ 
+            	
+            	
+            	
+            
 class DrawManager:
-    def Rect(self, x, y, w, h, renk, kopru=None):
-        if kopru and not kopru.kutu_hazirmi:
-            raise RuntimeError("Cobrapad Error: You must call .create_the_box() before using draw.Rect()!")
+    def Rect(self, x, y, w, h, renk):
         temiz_renk = renk.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using draw.Rect()")
+        else:
+        	pass 
+        	
         if temiz_renk not in renkler:
             raise ValueError(f"Cobrapad Error: The color '{renk}' is not defined in the color list!")
         rgb_renk = renkler[temiz_renk]
         nesne = KareNesnesi(x, y, w, h, rgb_renk)  
         cizim_listesi.append(nesne)
         return nesne
-
-    def Circle(self, x, y, yaricap, renk, kopru=None):
-        if kopru and not kopru.kutu_hazirmi:
-            raise RuntimeError("Cobrapad Error: You must call .create_the_box() before using draw.Circle()!")
+        
+    def Oval(self, x, y, w, h, renk):
         temiz_renk = renk.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using draw.Oval()")
+        else:
+        	pass 
+        if temiz_renk not in renkler:
+            raise ValueError(f"Cobrapad Error: The color '{renk}' is not defined in the color list!")
+        
+        rgb_renk = renkler[temiz_renk]
+        nesne = OvalNesnesi(x, y, w, h, rgb_renk)  
+        cizim_listesi.append(nesne)
+        return nesne
+        
+    def Polygon(self, noktalar, kalinrik, renk):
+        temiz_renk = renk.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using draw.Polygon()")
+        else:
+        	pass 
+        if temiz_renk not in renkler:
+            raise ValueError(f"Cobrapad Error: The color '{renk}' is not defined in the color list!")
+        
+        rgb_renk = renkler[temiz_renk]
+        nesne = PolygonNesnesi(noktalar, kalinrik, rgb_renk)  
+        cizim_listesi.append(nesne)
+        return nesne
+    def place(self, nesne4, x, y, w, h):
+        nesne4.x = x
+        nesne4.y = y
+        if not hasattr(nesne4, '_orijinal_surface'):
+            nesne4._orijinal_surface = nesne4.surface.copy()
+        nesne4.surface = pygame.transform.scale(nesne4._orijinal_surface, (w, h))
+        if nesne4 not in resim_kutusu2:
+            resim_kutusu2.append(nesne4)
+        return nesne4
+    	
+    
+    
+    def Circle(self, x, y, yaricap, renk):
+        temiz_renk = renk.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using draw.Circle()")
+        else:
+        	pass 
         if temiz_renk not in renkler:
             raise ValueError(f"Cobrapad Error: The color '{renk}' is not defined in the color list!")
         rgb_renk = renkler[temiz_renk]
         nesne = DaireNesnesi(x, y, yaricap, rgb_renk)  
         cizim_listesi.append(nesne)
         return nesne
+        
+     
 
         
         
@@ -139,6 +319,10 @@ class DisplayManager:
     def text(self, yazi, x, y, w, renk, tip="Arial"):
         global renkler
         temiz_renk = renk.lower().strip().replace(" ", "_")
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using display.text()")
+        else:
+        	pass 
         if temiz_renk not in renkler:
             
             raise ValueError(f"Cobrapad Error: The color '{renk}' is not defined in the color list!")
@@ -147,17 +331,98 @@ class DisplayManager:
         kutular.append(nesne)
         return nesne
         
+class AddManager:
+    def background(self, ekran_resim):
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using add.background()")
+        else:
+        	 pass
+        nesne3 = ResimNesnesi(ekran_resim)
+        resim_kutusu.append(nesne3)
+        return nesne3
+        
+    def image(self, resim):
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using add.image()")
+        else:
+        	pass
+        if not pygame.get_init():
+        	raise RuntimeError("Cobrapad Error: You must call open_screen() before add.image()!")
+        nesne4 = Resim2Nesnesi(resim)
+        return nesne4
+        
+        
+def buttonCreate(nesne,onclick):
+        if kutu_hazirmi2 == False:
+        	raise ValueError("Cobrapad Error: You must call setup() before using buttonCreate()")
+        nesne._onclick = onclick
+        button_kutusu.append(nesne)
+        return nesne 
+        
+ 
+def clearScreen():
+    if kutu_hazirmi2 == False:
+        raise ValueError("Cobrapad Error: You must call setup() before using clearScreen()")
+    cizim_listesi.clear()
+    kutular.clear()
+    resim_kutusu.clear()
+    resim_kutusu2.clear()
+    button_kutusu.clear()
+    kutularin_listesi.clear()
+
+def collide(nesne1, nesne2):
+    if kutu_hazirmi2 == False:
+        raise ValueError("Cobrapad Error: You must call setup() before using collide()")
+    
+    def get_rect(nesne):
+        if hasattr(nesne, 'surface'):
+            return pygame.Rect(nesne.x, nesne.y, nesne.surface.get_width(), nesne.surface.get_height())
+        elif nesne.tip == "daire":
+            return pygame.Rect(nesne.x - nesne.yaricap, nesne.y - nesne.yaricap, nesne.yaricap*2, nesne.yaricap*2)
+        elif nesne.tip == "polygon":
+            xs = [n[0] for n in nesne.noktalar]
+            ys = [n[1] for n in nesne.noktalar]
+            return pygame.Rect(min(xs), min(ys), max(xs)-min(xs), max(ys)-min(ys))
+        else:
+            return pygame.Rect(nesne.x, nesne.y, nesne.w, nesne.h)
+    
+    return get_rect(nesne1).colliderect(get_rect(nesne2))
+        	 	
+        	 
+        	 
+        	        	 
+        	
+        
+        
+  
+        
 def hide(nesne):
+    if kutu_hazirmi2 == False:
+        raise ValueError("Cobrapad Error: You must call setup() before using hide()")
     nesne.visible = False
-    
+
 def show(nesne):
+    if kutu_hazirmi2 == False:
+        raise ValueError("Cobrapad Error: You must call setup() before using show()")
     nesne.visible = True
-def run():
-    global pencere, arka_plan_rengi, saat, cizim_listesi, kutular
     
+
+def stop(nesne, durduma_suresi, sonra):
+    nesne._stop_baslangic = pygame.time.get_ticks()
+    nesne._stop_sure = durduma_suresi * 1000
+    nesne._stop_sonra = sonra
+    kutularin_listesi.append(nesne)
+    return kutularin_listesi
+    
+def run(callback=None):
+    global pencere, arka_plan_rengi, saat, cizim_listesi, kutular, kutu_hazirmi2
+
+    if kutu_hazirmi2 == False:
+        raise RuntimeError("Cobrapad Error: You must call the setup() method before running run()!")
+
     if pencere is None:
         raise RuntimeError("Cobrapad Error: You must call open_screen() before run()!")
-    
+
     while True:
         for olay in pygame.event.get():
             if olay.type == pygame.QUIT:
@@ -166,25 +431,92 @@ def run():
                     sys.exit()
                 except SystemExit:
                     pass
-                
+            if olay.type == pygame.MOUSEBUTTONDOWN:
+                ana_modul2 = sys.modules['__main__']
+                fonksiyon = hasattr(ana_modul2, "__MOUSEBUTTONDOWN__")
+                if fonksiyon:
+                    fonksiyon2 = getattr(ana_modul2, "__MOUSEBUTTONDOWN__")
+                    fonksiyon2(olay.pos)
+                if olay.button == 1:
+                    for nesne6 in button_kutusu:
+                        if hasattr(nesne6, 'tip'):
+                            if nesne6.tip == "kare" or nesne6.tip == "oval":
+                                rect = pygame.Rect(nesne6.x, nesne6.y, nesne6.w, nesne6.h)
+                                if rect.collidepoint(olay.pos):
+                                    nesne6._onclick()
+                            elif nesne6.tip == "daire":
+                                dx = olay.pos[0] - nesne6.x
+                                dy = olay.pos[1] - nesne6.y
+                                if (dx**2 + dy**2) <= nesne6.yaricap**2:
+                                    nesne6._onclick()
+                        else:
+                            rect = pygame.Rect(nesne6.x, nesne6.y, nesne6.surface.get_width(), nesne6.surface.get_height())
+                            if rect.collidepoint(olay.pos):
+                                nesne6._onclick()
+
+        if callback:
+            callback()
+
         if pencere:
             pencere.fill(arka_plan_rengi)
+
             for nesne in cizim_listesi:
                 if nesne.visible:
                     if nesne.tip == "kare":
                         pygame.draw.rect(pencere, nesne.renk, (nesne.x, nesne.y, nesne.w, nesne.h))
                     elif nesne.tip == "daire":
                         pygame.draw.circle(pencere, nesne.renk, (nesne.x, nesne.y), nesne.yaricap)
+                    elif nesne.tip == "oval":
+                        pygame.draw.ellipse(pencere, nesne.renk, (nesne.x, nesne.y, nesne.w, nesne.h))
+                    elif nesne.tip == "polygon":
+                        pygame.draw.polygon(pencere, nesne.renk, nesne.noktalar, nesne.kalinrik)
+                    if hasattr(nesne, '_moves_aktif') and nesne._moves_aktif:
+                        nesne.x += nesne._moves_x * nesne._moves_speed
+                        nesne.y += nesne._moves_y * nesne._moves_speed
+                    if hasattr(nesne, '_movesto_aktif') and nesne._movesto_aktif:
+                        if abs(nesne.x - nesne._movesto_hedef_x) > nesne._movesto_speed:
+                            nesne.x += nesne._movesto_speed if nesne.x < nesne._movesto_hedef_x else -nesne._movesto_speed
+                        if abs(nesne.y - nesne._movesto_hedef_y) > nesne._movesto_speed:
+                            nesne.y += nesne._movesto_speed if nesne.y < nesne._movesto_hedef_y else -nesne._movesto_speed
+                        if abs(nesne.x - nesne._movesto_hedef_x) <= nesne._movesto_speed and abs(nesne.y - nesne._movesto_hedef_y) <= nesne._movesto_speed:
+                            nesne._movesto_aktif = False
+
             for nesne2 in kutular:
                 if nesne2.visible:
                     yazi_resmi = nesne2.font_objesi.render(nesne2.yazi, True, nesne2.renk)
                     pencere.blit(yazi_resmi, (nesne2.x, nesne2.y))
 
+            for nesne3 in resim_kutusu:
+                if nesne3.visible:
+                    arka_plan = pygame.transform.scale(nesne3.surface, (screenX, screenY))
+                    pencere.blit(arka_plan, (0, 0))
+
+            for karakter in resim_kutusu2:
+                if karakter.visible:
+                    pencere.blit(karakter.surface, (karakter.x, karakter.y))
+                    if hasattr(karakter, '_moves_aktif') and karakter._moves_aktif:
+                        karakter.x += karakter._moves_x * karakter._moves_speed
+                        karakter.y += karakter._moves_y * karakter._moves_speed
+                    if hasattr(karakter, '_movesto_aktif') and karakter._movesto_aktif:
+                        if abs(karakter.x - karakter._movesto_hedef_x) > karakter._movesto_speed:
+                            karakter.x += karakter._movesto_speed if karakter.x < karakter._movesto_hedef_x else -karakter._movesto_speed
+                        if abs(karakter.y - karakter._movesto_hedef_y) > karakter._movesto_speed:
+                            karakter.y += karakter._movesto_speed if karakter.y < karakter._movesto_hedef_y else -karakter._movesto_speed
+                        if abs(karakter.x - karakter._movesto_hedef_x) <= karakter._movesto_speed and abs(karakter.y - karakter._movesto_hedef_y) <= karakter._movesto_speed:
+                            karakter._movesto_aktif = False
+
+            for nesne5 in list(kutularin_listesi):
+                if hasattr(nesne5, '_stop_baslangic'):
+                    if pygame.time.get_ticks() - nesne5._stop_baslangic >= nesne5._stop_sure:
+                        nesne5._stop_sonra()
+                        del nesne5._stop_baslangic
+                        kutularin_listesi.remove(nesne5)
         pygame.display.flip()
-        
-        if saat: saat.tick(60)
+
+        if saat:
+            saat.tick(60)
 
 screen = ScreenManager()
 draw = DrawManager()
 display = DisplayManager()
-
+add = AddManager()
