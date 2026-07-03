@@ -14,7 +14,7 @@ Cobrapad is a fast and easy-to-use 2D game library built on top of Pygame. It is
 - Add images and backgrounds easily
 - Display text on screen
 - Create clickable buttons
-- Animate objects with `moves()` and `movesTo()`
+- Animate objects with `moves()` and `movesBy()`
 - Show and hide objects
 - Detect mouse clicks anywhere on screen
 - Delay actions with a timer using `stop()`
