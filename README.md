@@ -1,7 +1,9 @@
 # Cobrapad
 
 
-
+<p align="center">
+  <img src= "cobrapad_logo.jpg" width="200">
+</p>
 
 
 Cobrapad is a fast and easy-to-use 2D game library built on top of Pygame. It is designed for beginners and intermediate developers who want to create 2D games without dealing with complex code.
